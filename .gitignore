@@ -1,0 +1,15 @@
+# Environment variables
+.env
+*.env.*
+!*.env.example
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db

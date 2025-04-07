@@ -1,0 +1,106 @@
+# Default configuration for the GitHub Docs AI Assistant Backend
+
+github_defaults:
+  owner: pingcap
+  repo: docs
+  branch: master
+  # Reference the GitHub token from the .env file
+  token: ${GITHUB_TOKEN} # Optional, but recommended for private repos/rate limits
+  file_extensions: ['.md'] # Default file extensions to list/analyze
+
+llm_providers:
+  # --- Default Selection ---
+  default_provider: openai # ID of the default provider below
+  default_model: gpt-3.5-turbo # ID of the default model for the default provider
+
+  # --- Provider Definitions ---
+  providers:
+    # - OpenAI
+    - id: openai
+      name: OpenAI
+      api_key: ${OPENAI_API_KEY} # Reference the key from .env
+      enabled: true # Explicitly enable OpenAI by default
+      # base_url: null # Uses default OpenAI base URL
+      models:
+        - id: gpt-4o
+          name: GPT-4o
+        - id: gpt-4-turbo
+          name: GPT-4 Turbo
+        - id: gpt-3.5-turbo
+          name: GPT-3.5 Turbo
+
+    # - Anthropic
+    - id: anthropic
+      name: Anthropic
+      api_key: ${ANTHROPIC_API_KEY} # Reference the key from .env
+      enabled: true # Disabled by default - requires key in .env
+      # base_url: null # Uses default Anthropic base URL
+      models:
+        - id: claude-3-opus-20240229
+          name: Claude 3 Opus
+        - id: claude-3-sonnet-20240229
+          name: Claude 3 Sonnet
+        - id: claude-3-haiku-20240307
+          name: Claude 3 Haiku
+
+    # - Google Generative AI (Gemini)
+    - id: google
+      name: Google (Gemini)
+      api_key: ${GOOGLE_API_KEY} # Reference the key from .env
+      enabled: false # Disabled by default - requires key in .env
+      # base_url: null
+      models:
+        - id: gemini-1.5-pro-latest
+          name: Gemini 1.5 Pro
+        - id: gemini-pro
+          name: Gemini Pro
+
+    # - OpenRouter (OpenAI Compatible Gateway)
+    - id: openrouter
+      name: OpenRouter.ai
+      api_key: ${OPENROUTER_API_KEY} # Reference the key from .env
+      enabled: false # Disabled by default - requires key in .env
+      base_url: https://openrouter.ai/api/v1 # Specify OpenAI-compatible base URL
+      models:
+        # Add specific model IDs available via OpenRouter that you want to use
+        - id: openai/gpt-4o
+          name: GPT-4o (via OpenRouter)
+        - id: anthropic/claude-3-haiku
+          name: Claude 3 Haiku (via OpenRouter)
+        - id: google/gemini-pro-1.5
+          name: Gemini Pro 1.5 (via OpenRouter)
+        - id: mistralai/mistral-7b-instruct
+          name: Mistral 7B Instruct (via OpenRouter)
+
+    # - LM Studio (Local OpenAI Compatible Server)
+    - id: lmstudio
+      name: LM Studio (Local)
+      api_key: ${LMSTUDIO_API_KEY} # Often not needed, can be empty string in .env
+      enabled: true # Enable by default, assumes server might be running
+      base_url: http://localhost:1234/v1 # Default LM Studio URL, adjust if needed
+      is_openai_compatible: true # Mark as OpenAI compatible
+      models:
+        # Model ID is often ignored by LM Studio server, but useful for display
+        # User should ensure the correct model is loaded in LM Studio application
+        - id: Qwen/Qwen1.5-7B-Chat-GGUF/qwen1_5-7b-chat-q5_k_m.gguf
+          name: Qwen 1.5 7B Chat Q5_K_M (LM Studio)
+        - id: loaded-model # Generic fallback ID
+          name: Currently Loaded (LM Studio)
+
+    # - Ollama (Local OpenAI Compatible Server)
+    - id: ollama
+      name: Ollama (Local)
+      api_key: ${OLLAMA_API_KEY} # Often not needed, can be 'ollama' or empty string in .env
+      enabled: true # Enable by default, assumes server might be running
+      base_url: http://localhost:11434/v1 # Default Ollama URL, adjust if needed
+      is_openai_compatible: true # Mark as OpenAI compatible
+      models:
+        # Model ID MUST match the model name/tag pulled in Ollama
+        - id: llama3:latest # Use specific tag if needed
+          name: Llama 3 (Ollama)
+        - id: mistral:latest
+          name: Mistral (Ollama)
+        - id: qwen:7b # Example if qwen 7b was pulled
+          name: Qwen 7B (Ollama)
+
+# Add other configuration sections below as needed

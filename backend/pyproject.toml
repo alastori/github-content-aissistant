@@ -1,0 +1,19 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flask>=3.1.0",
+    "flask-cors>=5.0.1",
+    "markdown-it-py>=3.0.0",
+    "openai==1.70.0", # Pinned version
+    "pydantic==2.11.2", # Explicitly add and pin pydantic
+    "python-dotenv>=1.1.0",
+    "requests>=2.32.3",
+    "flask-socketio>=5.3.6",
+    "pyyaml>=6.0.1",
+    "anthropic", # Remove version constraint to get latest
+    "google-generativeai>=0.7.2", # Add Google GenAI
+]
