@@ -161,28 +161,69 @@ def get_llm_completion(provider_config, model_id, prompt_messages, **kwargs):
             if not isinstance(client, Anthropic): raise TypeError(f"Client for {provider_id} is not an Anthropic compatible instance.")
 
             # --- Corrected Anthropic Message Formatting ---
-            system_prompt = None
-            messages_anthropic = []
+            system_prompt_content = None
+            temp_messages = [] # To hold non-system messages initially
+
             for msg in prompt_messages:
                 if msg['role'] == 'system':
-                    system_prompt = msg['content'] # Extract system prompt
+                    if system_prompt_content is None: # Capture the first system prompt found
+                        system_prompt_content = msg['content']
                 elif msg['role'] in ['user', 'assistant']:
-                    messages_anthropic.append(msg) # Keep user/assistant messages
+                    temp_messages.append(msg)
+                # Other roles are ignored
+
+            processed_anthropic_messages = []
+            if temp_messages: # Only process if there are user/assistant messages
+                # Merge consecutive messages of the same role
+                current_role = None
+                current_content_parts = []
+                for msg_content in temp_messages: # Iterate directly over message objects
+                    role = msg_content['role']
+                    content = msg_content['content']
+
+                    if role == current_role:
+                        current_content_parts.append(content)
+                    else: # New role or first message in temp_messages
+                        if current_role is not None: # Finalize previous message before starting a new one
+                            processed_anthropic_messages.append({"role": current_role, "content": "\n".join(current_content_parts)})
+                        
+                        current_role = role
+                        current_content_parts = [content]
+                
+                # Append the last message being processed after the loop finishes
+                if current_role is not None:
+                    processed_anthropic_messages.append({"role": current_role, "content": "\n".join(current_content_parts)})
+
+            # Ensure the message sequence is valid for Anthropic:
+            # 1. Must start with 'user'. If not, and list is not empty, prepend an empty user message.
+            # (Anthropic also requires non-empty messages array; their API will error if list is empty)
+            final_anthropic_messages = []
+            if processed_anthropic_messages: # Check if there are any messages to process
+                if processed_anthropic_messages[0]['role'] == 'assistant':
+                    # To conform to Anthropic's requirement of starting with a 'user' message.
+                    final_anthropic_messages.append({"role": "user", "content": ""}) 
+                final_anthropic_messages.extend(processed_anthropic_messages)
+            # If processed_anthropic_messages is empty, final_anthropic_messages will also be empty.
+            # Anthropic API will error if messages list is empty, which is an input problem.
 
             # Construct arguments for the API call
             api_kwargs = {
                 "model": model_id,
-                "messages": messages_anthropic,
-                "max_tokens": kwargs.get('max_tokens', 1024),
-                **{k: v for k, v in kwargs.items() if k not in ['max_tokens', 'model', 'messages']} # Add other kwargs safely
+                "messages": final_anthropic_messages, # Use the fully processed messages
+                "max_tokens": kwargs.get('max_tokens', 1024), # Default from original code
             }
-            # Only include the system parameter if system_prompt is not None
-            if system_prompt:
-                api_kwargs['system'] = system_prompt
-
+            
+            if system_prompt_content: # Add system prompt if it was found
+                api_kwargs['system'] = system_prompt_content
+            
+            # Add any other kwargs passed to the function, carefully excluding explicitly managed ones
+            for k, v in kwargs.items():
+                if k not in ['model', 'messages', 'max_tokens', 'system']:
+                    api_kwargs[k] = v
+            
             # Call API with constructed arguments
             response = client.messages.create(**api_kwargs)
-            # --- End Correction ---
+            # --- End Correction --- (Conceptually, the corrected section ends here)
 
             if response.content and len(response.content) > 0:
                 return response.content[0].text.strip()
