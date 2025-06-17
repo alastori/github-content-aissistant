@@ -10,8 +10,9 @@ const AnalysisForm = ({
   const [showLLMOptions, setShowLLMOptions] = useState(false); // State for progressive disclosure
 
   return (
-    <div className="mb-6 border-b pb-6"> {/* Wrap in div and add border */}
-      <h3 className="text-lg font-medium text-gray-800 mb-3">Define Analysis Task</h3>
+    <div className="mb-6 border-b pb-6">
+      <div className="p-4">
+        <h3 className="text-lg font-medium text-gray-800 mb-3">Define Analysis Task</h3>
       {/* User Prompt Input */}
       <div className="mb-4"> {/* Increased margin */}
         <label htmlFor="userPrompt" className="block text-sm font-medium text-gray-700 mb-1">
@@ -85,6 +86,7 @@ const AnalysisForm = ({
            </div>
          </div>
        )}
+      </div>
      </div>
    );
  };

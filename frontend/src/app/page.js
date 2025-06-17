@@ -13,17 +13,6 @@ import FileList from '../components/FileList';
 import ResultsDisplay from '../components/ResultsDisplay';
 import AboutInfo from '../components/AboutInfo'; // Import the new component
 
-// Helper component for Progress Display (can be moved to components later if desired)
-const ProgressDisplay = ({ progressMessage }) => {
-  if (!progressMessage) return null;
-  return (
-    <div className="w-full max-w-5xl p-3 mb-4 text-center bg-blue-100 border border-blue-200 rounded-lg shadow-sm">
-      <p className="text-blue-700 text-sm animate-pulse">{progressMessage}</p>
-    </div>
-  );
-};
-
-
 export default function Home() {
   // Use the custom hook to manage state and logic
   const {
@@ -51,7 +40,7 @@ export default function Home() {
      // defaultProviderId, // Get the default provider ID from the hook - REMOVED, use defaultProviderStatus
      defaultProviderStatus, // Get the detailed status object
      // End LLM Selection
-     progressMessage,
+     progress,
      availableFiles, // Changed from filteredFiles
      selectedFiles,  // Added
       handleScopeToggle,
@@ -158,8 +147,7 @@ export default function Home() {
                  {!isLoadingAnalysis ? (
                    <button
                      onClick={handleAnalyze}
-                     // Corrected disabled logic: check essential conditions
-                     disabled={isLoadingFiles || selectedScope.length === 0 || !userPrompt.trim() || !selectedProviderId || !selectedModelId || !owner || !repo || !branch}
+                     disabled={selectedScope.length === 0}
                      className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                    >
                      Process Request
@@ -174,9 +162,6 @@ export default function Home() {
                  )}
                </div>
 
-               {/* Progress Display */}
-               <ProgressDisplay progressMessage={progressMessage} />
-
                {/* Display Analysis Errors */}
                {analysisError && (
                   <div className="my-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -185,7 +170,11 @@ export default function Home() {
                )}
 
                 {/* Results Display - now expects an array */}
-                <ResultsDisplay analysisResults={analysisResults} />
+                <ResultsDisplay
+                  analysisResults={analysisResults}
+                  progress={progress}
+                  isLoadingAnalysis={isLoadingAnalysis}
+                />
               </>
             </div>
           )}

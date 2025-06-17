@@ -7,9 +7,14 @@ const API_BASE_URL = 'http://localhost:5001';
 const StatusDisplay = ({ apiStatus, defaultProviderStatus }) => {
   // State for showing details for *each* provider with an error
   const [showDetails, setShowDetails] = useState({}); // e.g., { 'github': false, 'openai': false }
+  const [dismissedBanners, setDismissedBanners] = useState({});
 
   const toggleDetails = (providerId) => {
     setShowDetails(prev => ({ ...prev, [providerId]: !prev[providerId] }));
+  };
+
+  const dismissBanner = (bannerId) => {
+    setDismissedBanners(prev => ({ ...prev, [bannerId]: true }));
   };
 
   // --- Loading States ---
@@ -111,21 +116,25 @@ const StatusDisplay = ({ apiStatus, defaultProviderStatus }) => {
   return (
     <div className="w-full max-w-5xl mb-6 space-y-3">
       {/* GitHub Status (uses apiStatus) */}
-      <div className={`p-4 border-l-4 rounded-r-lg shadow-sm ${apiStatus.github_ok ? 'bg-green-100 border-green-500 text-green-900' : 'bg-yellow-100 border-yellow-500 text-yellow-900'}`}>
-        <h4 className="font-semibold text-sm">GitHub Configuration</h4>
-        {apiStatus.github_ok ? (
-          <p className="text-sm">✓ Token seems OK.</p>
-        ) : (
-          <>
-            <p className="text-sm mb-1">{apiStatus.github_error?.message || 'Could not verify token.'} (Optional for public repos)</p>
-            {renderErrorDetails(apiStatus.github_error, 'github')}
-          </>
-        )}
-      </div>
+      {!dismissedBanners['github'] && (
+        <div className={`relative p-4 border-l-4 rounded-r-lg shadow-sm ${apiStatus.github_ok ? 'bg-green-100 border-green-500 text-green-900' : 'bg-yellow-100 border-yellow-500 text-yellow-900'}`}>
+          <button onClick={() => dismissBanner('github')} className="absolute top-2 right-2 text-inherit hover:opacity-70">&times;</button>
+          <h4 className="font-semibold text-sm">GitHub Configuration</h4>
+          {apiStatus.github_ok ? (
+            <p className="text-sm">✓ Token seems OK.</p>
+          ) : (
+            <>
+              <p className="text-sm mb-1">{apiStatus.github_error?.message || 'Could not verify token.'} (Optional for public repos)</p>
+              {renderErrorDetails(apiStatus.github_error, 'github')}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Default LLM Provider Status (Blocking Error - uses defaultProviderStatus) */}
-      {!defaultProviderOk && (
-         <div className="p-6 bg-red-100 border-l-4 border-red-500 rounded-r-lg shadow-md text-red-900">
+      {!defaultProviderOk && !dismissedBanners['defaultProviderError'] && (
+         <div className="relative p-6 bg-red-100 border-l-4 border-red-500 rounded-r-lg shadow-md text-red-900">
+           <button onClick={() => dismissBanner('defaultProviderError')} className="absolute top-2 right-2 text-inherit hover:opacity-70">&times;</button>
            {renderDefaultProviderErrorContent()}
          </div>
       )}
@@ -133,17 +142,21 @@ const StatusDisplay = ({ apiStatus, defaultProviderStatus }) => {
        {/* Other Enabled Provider Warnings (Non-Blocking - uses apiStatus) */}
        {defaultProviderOk && otherProviderErrors.length > 0 && (
           otherProviderErrors.map(errorInfo => (
-             <div key={errorInfo.id} className="p-4 bg-yellow-100 border-l-4 border-yellow-500 rounded-r-lg shadow-sm text-yellow-900">
+            !dismissedBanners[errorInfo.id] && (
+             <div key={errorInfo.id} className="relative p-4 bg-yellow-100 border-l-4 border-yellow-500 rounded-r-lg shadow-sm text-yellow-900">
+               <button onClick={() => dismissBanner(errorInfo.id)} className="absolute top-2 right-2 text-inherit hover:opacity-70">&times;</button>
                <h4 className="font-semibold text-sm">Configuration Warning: {errorInfo.id}</h4>
                <p className="text-sm mb-1">{errorInfo.message || `Could not verify provider '${errorInfo.id}'.`}</p>
                {renderErrorDetails(errorInfo, errorInfo.id)}
              </div>
+            )
           ))
        )}
 
        {/* Success Message for Default Provider (Show if it's OK - uses defaultProviderStatus) */}
-       {defaultProviderOk && (
-          <div className={`p-3 border-l-4 rounded-r-lg shadow-sm ${defaultProviderError?.details?.env_override_warning ? 'bg-yellow-100 border-yellow-500 text-yellow-900' : 'bg-green-100 border-green-500 text-green-900'}`}>
+       {defaultProviderOk && !dismissedBanners['defaultProviderSuccess'] && (
+          <div className={`relative p-3 border-l-4 rounded-r-lg shadow-sm ${defaultProviderError?.details?.env_override_warning ? 'bg-yellow-100 border-yellow-500 text-yellow-900' : 'bg-green-100 border-green-500 text-green-900'}`}>
+             <button onClick={() => dismissBanner('defaultProviderSuccess')} className="absolute top-2 right-2 text-inherit hover:opacity-70">&times;</button>
              <p className="font-medium text-sm">✓ Default LLM Provider ({defaultProviderId || 'N/A'}) configuration seems OK.</p>
              {/* Show override warning if present for the default provider */}
              {defaultProviderError?.details?.env_override_warning && <p className="mt-1 text-xs font-semibold">Default LLM Key Warning: {defaultProviderError.details.env_override_warning}</p>}

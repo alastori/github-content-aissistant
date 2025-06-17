@@ -21,7 +21,7 @@ except SystemExit as e:
 # --- Flask App Setup ---
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+CORS(app) # Allow all origins for all routes
 
 # Import and register routes AFTER app and socketio are created
 # to avoid circular dependencies if routes import socketio from main
