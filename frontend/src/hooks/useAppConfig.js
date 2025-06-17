@@ -109,8 +109,12 @@ export function useAppConfig(apiStatus) { // Takes apiStatus as input
 
         } catch (e) {
           console.error("Error processing config and determining default provider:", e);
-          setConfigError(`Failed to process configuration: ${e.message}.`);
-          setDefaultProviderStatus({ id: null, ok: false, isLoading: false, error: { type: 'config', message: `Failed to load or process configuration: ${e.message}` } });
+          let errorMessage = `Failed to process configuration: ${e.message}.`;
+          if (e instanceof TypeError && e.message === 'Failed to fetch') {
+            errorMessage = 'Network error: Could not connect to the backend to fetch configuration. Please ensure the server is running and accessible.';
+          }
+          setConfigError(errorMessage);
+          setDefaultProviderStatus({ id: null, ok: false, isLoading: false, error: { type: 'config', message: errorMessage } });
           // Set fallbacks even on error
           setOwner('pingcap'); setRepo('docs'); setBranch('master');
           setDefaultFileFilters(['.md']);

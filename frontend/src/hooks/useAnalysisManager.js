@@ -57,7 +57,7 @@ export function useAnalysisManager() {
      isLoadingAnalysis,
     analysisResults,
     analysisError,
-    progressMessage,
+    progress,
     handleAnalyze,
     handleCancel,
    } = useAnalysisExecution(
@@ -102,7 +102,7 @@ export function useAnalysisManager() {
     isLoadingAnalysis, // Needed for buttons and progress
     analysisResults, // Needed for ResultsDisplay
     analysisError, // Needed for error display
-    progressMessage, // Needed for ProgressDisplay
+    progress, // Needed for ProgressDisplay
     handleAnalyze, // Needed for Process button
     handleCancel, // Needed for Cancel button
 

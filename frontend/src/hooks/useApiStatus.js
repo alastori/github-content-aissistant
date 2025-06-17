@@ -44,12 +44,16 @@ export function useApiStatus() {
       } catch (e) {
         console.error("Error fetching API status:", e);
         if (isMounted) {
+          let errorMessage = `Failed to fetch API status: ${e.message}`;
+          if (e instanceof TypeError && e.message === 'Failed to fetch') {
+            errorMessage = 'Network error: Could not connect to the backend. Please ensure the server is running and accessible.';
+          }
           setApiStatus({
             github_ok: null,
             github_error: null,
             provider_statuses: {},
             loading: false, // Set loading false even on error
-            error: `Failed to fetch API status: ${e.message}`
+            error: errorMessage
           });
         }
       }

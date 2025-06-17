@@ -11,7 +11,7 @@ export function useAnalysisExecution(
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
   const [analysisResults, setAnalysisResults] = useState([]);
   const [analysisError, setAnalysisError] = useState(null);
-  const [progressMessage, setProgressMessage] = useState('');
+  const [progress, setProgress] = useState({ message: '', percentage: 0, current: 0, total: 0, successCount: 0, errorCount: 0 });
   const [currentTaskId, setCurrentTaskId] = useState(null);
 
   const socketRef = useRef(null);
@@ -39,7 +39,7 @@ export function useAnalysisExecution(
     setIsLoadingAnalysis(true);
     setAnalysisError(null);
     setAnalysisResults([]);
-    setProgressMessage('Starting analysis...');
+    setProgress({ message: 'Starting analysis...', percentage: 0, current: 0, total: 0, successCount: 0, errorCount: 0 });
     setCurrentTaskId(null);
     disconnectExpectedRef.current = false;
 
@@ -106,7 +106,7 @@ export function useAnalysisExecution(
       socket.on('connect', () => {
         console.log('Socket connected:', socket.id);
         socket.emit('join', { task_id: currentTaskId }); // Join room for this task
-        setProgressMessage('Connected, waiting for progress...');
+        setProgress(prev => ({ ...prev, message: 'Connected, waiting for progress...' }));
       });
 
       socket.on('disconnect', (reason) => {
@@ -134,15 +134,26 @@ export function useAnalysisExecution(
       // --- Task-Specific Event Handlers ---
       socket.on('progress_update', (data) => {
         if (data.message) {
-          setProgressMessage(data.message);
+          setProgress(prev => ({ ...prev, message: data.message }));
         } else if (data.current_file) {
           const percent = data.total_files > 0 ? Math.round(((data.current_index + 1) / data.total_files) * 100) : 0;
-          setProgressMessage(`Processing ${data.current_index + 1}/${data.total_files} (${percent}%): ${data.current_file}`);
+          setProgress(prev => ({
+            ...prev,
+            message: `Processing: ${data.current_file}`,
+            percentage: percent,
+            current: data.current_index + 1,
+            total: data.total_files
+          }));
         }
       });
 
       socket.on('partial_result', (data) => {
         setAnalysisResults(prev => [...prev, data]);
+        if (data.error) {
+          setProgress(prev => ({ ...prev, errorCount: prev.errorCount + 1 }));
+        } else {
+          setProgress(prev => ({ ...prev, successCount: prev.successCount + 1 }));
+        }
       });
 
       socket.on('final_result', (data) => {
@@ -160,7 +171,20 @@ export function useAnalysisExecution(
           console.log('Task finished event received:', data);
           setIsLoadingAnalysis(false);
           setCurrentTaskId(null); // Clear task ID
-          setProgressMessage(data.status === 'completed' ? 'Analysis complete.' : `Analysis ${data.status}.`);
+          // Use a timeout to ensure the final result has been processed
+          setTimeout(() => {
+            setAnalysisResults(prevResults => {
+              const hasErrors = prevResults.some(r => r.error) || analysisError;
+              let finalMessage = 'Analysis complete.';
+              if (data.status === 'cancelled') {
+                finalMessage = 'Analysis cancelled.';
+              } else if (hasErrors) {
+                finalMessage = 'Analysis complete with errors.';
+              }
+              setProgress(prev => ({ ...prev, message: finalMessage, percentage: 100 }));
+              return prevResults;
+            });
+          }, 100);
           disconnectExpectedRef.current = true; // Expect disconnect after finish
           socket.disconnect();
         }
@@ -193,7 +217,7 @@ export function useAnalysisExecution(
     isLoadingAnalysis,
     analysisResults,
     analysisError,
-    progressMessage,
+    progress,
     handleAnalyze,
     handleCancel,
   };
